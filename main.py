@@ -4,8 +4,38 @@ from PyQt5.QtGui import *
 from PyQt5.uic import *
 import os, sys
 from parcing import *
-import welcome, title, read_ranobe
+import welcome, read_ranobe
 
+headers = {
+    "Accept": "*/*",
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0",
+}
+titles_dict = {}
+
+def get_data():
+    if not os.path.exists("data"):
+        os.mkdir("data")
+
+    r = requests.get("https://ranobe.me/stat?top=stat_all", headers)
+    soup = bs(r.text, "lxml")
+
+    counter = soup.select(".paginator > span > a")[-1].text
+    print(counter)
+
+    for i in range(1, int(counter)+1):
+        r = requests.get(f"https://ranobe.me/stat?top=stat_all&page={i}")
+        soup = bs(r.text, "lxml")
+
+        rating = soup.select(".fic > a")
+        for item in rating:
+            name = item.text
+            href = "https://ranobe.me" + item.get("href")
+
+            if not name in titles_dict and not href in titles_dict:
+                titles_dict[name] = href
+
+    with open("data/titles.json", "w") as file:
+        json.dump(titles_dict, file, indent=4, ensure_ascii=False)  
 
 
 def get_title(ranobe_title, ranobe_cahpter : int):
